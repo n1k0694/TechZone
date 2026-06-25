@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS y JS -->
+    <link rel="stylesheet" href="./bootstrap-5.3.8-dist/css/bootstrap.min.css">
+    <script src="./bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <!-- Estilos CSS -->
+    <link rel="stylesheet" href="./css/style.css">
+    <script>
+        //carga del header
+        fetch("files/header.html")
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById("header").innerHTML = html;
+            })
+            .catch(error => console.error("Error al cargar el header:", error));
+        //carga del footer
+        fetch("files/footer.html")
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("footer").innerHTML = data;
+            })
+            .catch(error => console.error("Error al cargar el footer:", error));
+    </script>
+    <title>Nosotros - TechZone</title>
+</head>
+
+<body class="bg-light">
+
+    <!-- Encabezado -->
+    <div id="header"></div>
+
+    <!-- Contenido principal -->
+    <main class="container py-5">
+        <div class="row mb-4">
+            <div class="col text-center">
+                <h1 class="display-5 fw-bold text-primary">Nuestro Proyecto de Ventas Online</h1>
+                <p class="lead">Un esfuerzo colaborativo entre tres estudiantes apasionados por la tecnología y el
+                    desarrollo web.</p>
+            </div>
+        </div>
+
+        <!-- Sección de descripción -->
+        <div class="row align-items-center mb-5 ">
+            <div class="col-md-6 text-muted" id="texto-idea">
+                <h2 class="fw-bold">La idea</h2>
+                <p>
+                    TechZone nace como un proyecto académico con visión práctica: crear un sitio web de ventas
+                    que combine diseño moderno, seguridad y facilidad de uso. Nuestro objetivo es ofrecer una
+                    experiencia de compra clara y atractiva, integrando catálogos dinámicos y herramientas de
+                    comunicación para clientes.
+                </p>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <img src="./img/nosotros.png" class="card-img-top p-3" alt="Equipo de trabajo">
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de equipo -->
+        <div class="row text-center mt-5 mb-5">
+            <h2 class="fw-bold mb-4">Nuestro Equipo</h2>
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Nicolás Castro</h5>
+                        <p class="card-text">Infraestructura y seguridad: configuración de servidores y protección de
+                            datos.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Lucas Krigger</h5>
+                        <p class="card-text">Frontend y experiencia de usuario: diseño de interfaces y catálogos
+                            dinámicos.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Cristian Villalobos</h5>
+                        <p class="card-text">Backend y lógica de negocio: integración con bases de datos y pruebas
+                            funcionales.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección con efecto Bootstrap -->
+        <div class="row mb-5">
+            <div class="col text-center">
+                <div class="alert alert-info shadow-sm text-uppercase" role="alert">
+                    Este proyecto es más que una tarea: es nuestra primera aproximación a un framework real de
+                    desarrollo web.
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- inicio del footer  -->
+    <div id="footer"></div>
+</body>
+
+</html>
