@@ -22,23 +22,17 @@ exports.renderPagina5 = (req, res) => res.sendFile(path.resolve(__dirname), 'Vie
 // Obtener productos desde MySQL y procesar con JavaScript
 exports.getProductosFormateados = async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM productos ORDER BY id DESC;');
-        
-        // 1. AUDITORÍA CRÍTICA: Mira la consola de VS Code al cargar la página
-        console.log("👉 ESTRUCTURA REAL DE UN REGISTRO EN MYSQL:", rows[0]);
+        const [rows] = await db.query('SELECT * FROM productos where id=1;');
 
         const productosFinales = rows.map(p => {
-            // 2. Imprimimos el valor exacto para ver si viene como undefined
-            console.log(`Producto ID ${p.id} - p.precio es:`, p.precio);
-            
             return {
                 id: p.id,
                 nombre: p.nombre,
                 categoria: p.categoria,
                 stock: p.stock,
-                // Usamos un operador de respaldo por si la columna se llama distinto
-                precioFormateado: p.precio ? `$${p.precio.toLocaleString('es-CL')}` : '$0',
-                precioRaw: p.precio || 0 // Si es undefined, lo forzamos a 0 para que no desaparezca del JSON
+                // Entregamos el valor bruto de la base de datos a ambos campos
+                precioRaw: p.precio,
+                precioFormateado: p.precio, 
             };
         });
 

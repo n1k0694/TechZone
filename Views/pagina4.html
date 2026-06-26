@@ -141,7 +141,7 @@
                         <td><span class="badge bg-secondary px-2 py-1">ID-${item.id}</span></td>
                         <td class="fw-bold text-dark">${item.nombre}</td>
                         <td><span class="badge bg-light text-primary border border-primary-subtle text-uppercase small">${item.categoria}</span></td>
-                        <td class="fw-bold">${item.precioRaw}</td>
+                        <td class="fw-bold">${item.precioFormateado}</td>
                         <td><span class="badge ${item.stock > 0 ? 'bg-success' : 'bg-danger'} d-inline-block text-center" style="min-width: 80px;">${item.stock} u.</span></td>
                     </tr>`;
             });
