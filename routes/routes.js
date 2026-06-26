@@ -2,16 +2,16 @@ const express = require('express');
 const router = express.Router();
 const controllers = require('../Controllers/controllers');
 
-// Rutas para mostrar las páginas HTML
+// 1. RUTAS DE NAVEGACIÓN (VISTAS HTML)
 router.get('/', controllers.renderIndex);
-router.get('/pagina2', controllers.renderPagina2);
-router.get('/pagina3', controllers.renderPagina3);
+router.get('/pagina2', controllers.renderPagina2); // Nosotros
+router.get('/pagina3', controllers.renderPagina3); // Contacto
+router.get('/pagina4', controllers.renderPagina4); // Stock Inventario
+router.get('/pagina5', controllers.renderPagina5); // Cotizador
 
-// NUEVAS RUTAS DE DATOS (API)
-// Esta ruta la usaremos para rellenar la tabla HTML dinámicamente
+// 2. ENDPOINTS DE LA API (TRANSACCIONALES)
 router.get('/api/productos', controllers.getProductosFormateados);
-
-// Esta ruta procesará los datos mediante POST para evaluar los Regex
-router.post('/api/validar', controllers.validarFormulario);
+router.post('/api/inventario/agregar', controllers.agregarInventario); // Admin suma stock
+router.post('/api/ventas/comprar', controllers.procesarVenta);        // Cliente resta stock
 
 module.exports = router;

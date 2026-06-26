@@ -7,24 +7,11 @@ const db = require('../Config/db'); // Asegúrate de que la carpeta se llame 'Co
  * -------------------------------------------------------------------
  */
 
-// Servir index.html
-const renderIndex = (req, res) => {
-    const rutaIndex = path.resolve(__dirname, '..', 'Views', 'index.html');
-    res.sendFile(rutaIndex);
-};
-
-// Servir pagina2.html
-const renderPagina2 = (req, res) => {
-    const rutaPagina2 = path.resolve(__dirname, '..', 'Views', 'pagina2.html');
-    res.sendFile(rutaPagina2);
-};
-
-// Servir pagina3.html
-const renderPagina3 = (req, res) => {
-    const rutaPagina3 = path.resolve(__dirname, '..', 'Views', 'pagina3.html');
-    res.sendFile(rutaPagina3);
-};
-
+exports.renderindex = (req, res) => res.sendFile(path.resolve(__dirname), 'Views', 'index.html');
+exports.renderPagina2 = (req, res) => res.sendFile(path.resolve(__dirname), 'Views', 'pagina2.html');
+exports.renderPagina3 = (req, res) => res.sendFile(path.resolve(__dirname), 'Views', 'pagina3.html');
+exports.renderPagina4 = (req, res) => res.sendFile(path.resolve(__dirname), 'Views', 'pagina4.html');
+exports.renderPagina5 = (req, res) => res.sendFile(path.resolve(__dirname), 'Views', 'pagina5.html');
 
 /**
  * -------------------------------------------------------------------
@@ -33,65 +20,93 @@ const renderPagina3 = (req, res) => {
  */
 
 // Obtener productos desde MySQL y procesar con JavaScript
-const getProductosFormateados = async (req, res) => {
+exports.getProductosFormateados = async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT id, nombre, categoria, stock, precio FROM productos;');
+        const [rows] = await db.query('SELECT * FROM productos ORDER BY id DESC;');
+        
+        // 1. AUDITORÍA CRÍTICA: Mira la consola de VS Code al cargar la página
+        console.log("👉 ESTRUCTURA REAL DE UN REGISTRO EN MYSQL:", rows[0]);
 
-        // Método iterativo 1: .filter()
-        const productosConStock = rows.filter(producto => producto.stock);
-
-        // Método iterativo 2: .map()
-        const productosFinales = productosConStock.map(producto => {
+        const productosFinales = rows.map(p => {
+            // 2. Imprimimos el valor exacto para ver si viene como undefined
+            console.log(`Producto ID ${p.id} - p.precio es:`, p.precio);
+            
             return {
-                id: producto.id,
-                nombre: producto.nombre,
-                categoria: producto.categoria,
-                stock: producto.stock,
-                precioFormateado: `$${producto.precio.toLocaleString('es-CL')}`
+                id: p.id,
+                nombre: p.nombre,
+                categoria: p.categoria,
+                stock: p.stock,
+                // Usamos un operador de respaldo por si la columna se llama distinto
+                precioFormateado: p.precio ? `$${p.precio.toLocaleString('es-CL')}` : '$0',
+                precioRaw: p.precio || 0 // Si es undefined, lo forzamos a 0 para que no desaparezca del JSON
             };
         });
 
         res.json(productosFinales);
     } catch (error) {
-        console.error("Error en la base de datos:", error);
-        res.status(500).json({ error: 'Hubo un problema al conectar con la base de datos' });
+        console.error("Error en getProductosFormateados:", error);
+        res.status(500).json({ error: 'Fallo al sincronizar el catálogo.' });
     }
 };
 
-// Validar datos con Expresiones Regulares (Regex)
-const validarFormulario = (req, res) => {
-    const { email, telefono } = req.body;
+// POST: El Administrador añade stock desde la Consola (Pagina 4)
+exports.agregarInventario = async (req, res) => {
+    const { producto_id, cantidad } = req.body;
+    const usuario_id = 1; // ID ficticio de Nicolás Admin (mientras dejamos el login para el final)
 
-    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const regexTelefono = /^(\+?56)? ?9 \d{4} \d{4}$|^(\+?56)? ?9\d{8}$/;
+    try {
+        // 1. Registrar la auditoría del movimiento en la base de datos
+        await db.query(
+            'INSERT INTO movimientos_stock (producto_id, usuario_id, cantidad) VALUES (?, ?, ?);',
+            [producto_id, usuario_id, cantidad]
+        );
 
-    const esEmailValido = regexEmail.test(email);
-    const esTelefonoValido = regexTelefono.test(telefono);
+        // 2. Transacción: Sumar el stock al producto correspondiente
+        await db.query(
+            'UPDATE productos SET stock = stock + ? WHERE id = ?;',
+            [cantidad, producto_id]
+        );
 
-    if (!esEmailValido || !esTelefonoValido) {
-        return res.status(400).json({
-            success: false,
-            message: 'Error de validación: El formato del correo o del teléfono es incorrecto.',
-            errores: { email: esEmailValido, telefono: esTelefonoValido }
-        });
+        res.json({ success: true, message: '¡Inventario actualizado y registrado con éxito!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error interno al procesar la carga de stock.' });
     }
+};
 
-    res.json({
-        success: true,
-        message: '¡Validación Regex exitosa! Los formatos son correctos.'
-    });
+// POST: El Cliente ejecuta la compra desde el Cotizador (Pagina 5)
+exports.procesarVenta = async (req, res) => {
+    const { items, total } = req.body; // "items" será un array de productos seleccionados
+    const usuario_id = 3; // ID ficticio de Juan Cliente (hasta que hagamos las sesiones)
+
+    try {
+        // 1. Crear la cabecera de la venta
+        const [resultVenta] = await db.query(
+            'INSERT INTO ventas (usuario_id, total) VALUES (?, ?);',
+            [usuario_id, total]
+        );
+        const nuevaVentaId = resultVenta.insertId;
+
+        // 2. Recorrer los productos comprados para descontar stock e insertar detalles
+        for (const item of items) {
+            // Insertar detalle de venta
+            await db.query(
+                'INSERT INTO detalle_ventas (venta_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?);',
+                [nuevaVentaId, item.id, item.cantidad, item.precioRaw]
+            );
+
+            // Rebajar el stock físico en la tabla maestra
+            await db.query(
+                'UPDATE productos SET stock = stock - ? WHERE id = ?;',
+                [item.cantidad, item.id]
+            );
+        }
+
+        res.json({ success: true, message: `Venta procesada con éxito. Folio generado: #${nuevaVentaId}` });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Fallo crítico al descontar stock o registrar la venta.' });
+    }
 };
 
 
-/**
- * -------------------------------------------------------------------
- * 3. EXPORTACIÓN ÚNICA (Al final del archivo)
- * -------------------------------------------------------------------
- */
-module.exports = {
-    renderIndex,
-    renderPagina2,
-    renderPagina3,
-    getProductosFormateados,
-    validarFormulario
-};
