@@ -3,7 +3,7 @@ const router = express.Router();
 const controllers = require('../Controllers/controllers');
 
 // 1. RUTAS DE NAVEGACIÓN (VISTAS HTML)
-router.get('/', controllers.renderIndex);
+router.get('/', controllers.renderindex);
 router.get('/pagina2', controllers.renderPagina2); // Nosotros
 router.get('/pagina3', controllers.renderPagina3); // Contacto
 router.get('/pagina4', controllers.renderPagina4); // Stock Inventario

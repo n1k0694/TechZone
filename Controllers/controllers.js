@@ -22,7 +22,7 @@ exports.renderPagina5 = (req, res) => res.sendFile(path.resolve(__dirname), 'Vie
 // Obtener productos desde MySQL y procesar con JavaScript
 exports.getProductosFormateados = async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM productos where id=1;');
+        const [rows] = await db.query('SELECT * FROM productos ORDER BY id DESC;');
 
         const productosFinales = rows.map(p => {
             return {
@@ -32,7 +32,7 @@ exports.getProductosFormateados = async (req, res) => {
                 stock: p.stock,
                 // Entregamos el valor bruto de la base de datos a ambos campos
                 precioRaw: p.precio,
-                precioFormateado: p.precio, 
+                precioFormateado: `$${p.precio.toLocaleString('es-CL')}`
             };
         });
 
