@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/bootstrap-5.3.8-dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script>
+        // Carga modularizada desde la nueva carpeta Components
+        fetch("/Components/header.html")
+            .then(res => res.text())
+            .then(html => { document.getElementById("header").innerHTML = html; })
+            .catch(error => console.error("Error al cargar el header:", error));
+
+        fetch("/Components/footer.html")
+            .then(response => response.text())
+            .then(data => { document.getElementById("footer").innerHTML = data; })
+            .catch(error => console.error("Error al cargar el footer:", error));
+    </script>
+    <title>Inicio - TechZone</title>
+</head>
+
+<body>
+    <div id="header"></div>
+
+    <div class="landing-container text-center mt-5">
+        <div class="container mb-4">
+            <div class="alert alert-dark border-start border-primary border-4 text-start mx-auto" style="max-width: 650px;">
+                <i class="bi bi-people-fill text-primary me-2"></i><strong>Control de Entrega - Semana 6:</strong><br>
+                <span class="ms-4 text-muted">Integrantes: [Tu Nombre Completo] y [Nombre de tu Compañero]</span>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row justify-content-center align-items-center mb-3">
+                <div class="col-auto">
+                    <h1 class="display-4 mb-0">Bienvenido a</h1>
+                </div>
+                <div class="col-auto">
+                    <img src="/img/logo-final.png" alt="TechZone Logo" id="logo-central" class="img-fluid">
+                </div>
+            </div>
+        </div>
+        <hr class="border-secondary w-50 mx-auto mb-2">
+        <p class="lead mb-4 text-secondary">
+            Plataforma corporativa para la administración y control de inventario tecnológico y emisión de presupuestos formales.
+        </p>
+        
+        <div class="container mb-5">
+            <div class="row justify-content-center">
+                <div class="col-auto">
+                    <img src="/img/image01.png" id="imagen01" class="img-fluid rounded shadow-sm">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer"></div>
+
+    <script src="/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
