@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 27-06-2026 a las 17:48:07
+-- Tiempo de generación: 27-06-2026 a las 18:12:40
 -- Versión del servidor: 8.4.7
 -- Versión de PHP: 8.3.28
 
@@ -31,7 +31,7 @@ DROP TABLE IF EXISTS `cotizaciones`;
 CREATE TABLE IF NOT EXISTS `cotizaciones` (
   `id` int NOT NULL AUTO_INCREMENT,
   `numero_documento` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `cliente_nombre` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cliente_nombre` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `cliente_email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `cliente_telefono` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `monto_neto` int NOT NULL DEFAULT '0',
@@ -40,21 +40,7 @@ CREATE TABLE IF NOT EXISTS `cotizaciones` (
   `fecha_emision` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_numero_documento` (`numero_documento`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Volcado de datos para la tabla `cotizaciones`
---
-
-INSERT INTO `cotizaciones` (`id`, `numero_documento`, `cliente_nombre`, `cliente_email`, `cliente_telefono`, `monto_neto`, `monto_iva`, `total_general`, `fecha_emision`) VALUES
-(1, '#000461', '', 'nikolas.kastro@gmail.com', '965874125', 175000, 33250, 208250, '2026-06-27 14:12:13'),
-(2, '#0002', '', 'nikolas.kastro@gmail.com', '965874125', 125000, 23750, 148750, '2026-06-27 14:19:45'),
-(3, '#0003', '', 'nikolas.kastro@gmail.com', '965874125', 175000, 33250, 208250, '2026-06-27 14:20:26'),
-(4, '#0004', '', 'nikolas.kastro@gmail.com', '965874125', 95000, 18050, 113050, '2026-06-27 14:21:35'),
-(5, '#0005', 'Isabel Castro', 'nikolas.kastro@gmail.com', '965874125', 134990, 25648, 160638, '2026-06-27 14:33:40'),
-(6, '#0006', 'Rocio Castro', 'nikolas.kastro@gmail.com', '965874125', 125000, 23750, 148750, '2026-06-27 17:09:38'),
-(7, '#0007', 'Carolina Fuica', 'nikolas.kastro@gmail.com', '965874125', 175000, 33250, 208250, '2026-06-27 17:30:14'),
-(8, '#0008', 'Nicolas Castro', 'nikolas.kastro@gmail.com', '965874125', 320000, 60800, 380800, '2026-06-27 17:46:34');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -73,21 +59,7 @@ CREATE TABLE IF NOT EXISTS `detalle_cotizaciones` (
   PRIMARY KEY (`id`),
   KEY `fk_detalle_cotizacion_parent` (`cotizacion_id`),
   KEY `fk_detalle_cotizacion_producto` (`producto_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Volcado de datos para la tabla `detalle_cotizaciones`
---
-
-INSERT INTO `detalle_cotizaciones` (`id`, `cotizacion_id`, `producto_id`, `cantidad`, `precio_unitario`, `subtotal`) VALUES
-(1, 1, 17, 1, 175000, 175000),
-(2, 2, 15, 1, 125000, 125000),
-(3, 3, 17, 1, 175000, 175000),
-(4, 4, 12, 1, 95000, 95000),
-(5, 5, 13, 1, 134990, 134990),
-(6, 6, 15, 1, 125000, 125000),
-(7, 7, 17, 1, 175000, 175000),
-(8, 8, 16, 1, 320000, 320000);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -121,17 +93,8 @@ CREATE TABLE IF NOT EXISTS `movimientos_stock` (
   `cantidad` int NOT NULL,
   `fecha` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `fk_mov_producto` (`producto_id`),
-  KEY `fk_mov_usuario` (`usuario_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Volcado de datos para la tabla `movimientos_stock`
---
-
-INSERT INTO `movimientos_stock` (`id`, `producto_id`, `usuario_id`, `cantidad`, `fecha`) VALUES
-(1, 13, 1, 1, '2026-06-26 13:34:31'),
-(2, 12, 1, 1, '2026-06-27 14:21:19');
+  KEY `fk_mov_producto` (`producto_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -142,35 +105,38 @@ INSERT INTO `movimientos_stock` (`id`, `producto_id`, `usuario_id`, `cantidad`, 
 DROP TABLE IF EXISTS `productos`;
 CREATE TABLE IF NOT EXISTS `productos` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `nombre` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `categoria` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `nombre` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `categoria` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `precio` int NOT NULL,
   `stock` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `productos`
 --
 
 INSERT INTO `productos` (`id`, `nombre`, `categoria`, `precio`, `stock`) VALUES
-(1, 'Gabinete Gamer Corsair iCUE', 'Gabinetes', 120000, 5),
-(2, 'Memoria RAM Kingston Fury 16GB', 'Componentes', 45000, 12),
-(3, 'Tarjeta de Video ASUS RTX 4060', 'Componentes', 380000, 3),
-(4, 'Mouse Logi G Pro X Superlight', 'Perifericos', 110000, 0),
-(5, 'Teclado Mecanico Redragon Mitra', 'Perifericos', 35000, 8),
-(6, 'Gabinete Gamer Corsair iCUE Link 3500X', 'Gabinetes', 129990, 5),
-(7, 'Gabinete Lian Li O11 Dynamic EVO', 'Gabinetes', 165000, 3),
-(8, 'Memoria RAM Kingston Fury Beast 16GB DDR5', 'Componentes', 58990, 24),
-(9, 'Tarjeta de Video ASUS ROG Strix RTX 4060 Ti', 'Componentes', 485000, 4),
-(10, 'Procesador AMD Ryzen 7 7800X3D AM5', 'Componentes', 399990, 8),
-(11, 'Fuente de Poder Seasonic Focus GX-850 Gold', 'Componentes', 115000, 10),
-(12, 'Disco SSD M.2 NVMe WD Black SN850X 1TB', 'Componentes', 95000, 0),
-(13, 'Mouse Logi G Pro X Superlight 2 Wireless', 'Perifericos', 134990, 0),
-(14, 'Teclado Mecánico Redragon Mitra K551 RGB', 'Perifericos', 38990, 15),
-(15, 'Audífonos HyperX Cloud III Wireless', 'Perifericos', 125000, 5),
-(16, 'Switch Cisco Business 250 Smart 24-Port', 'Redes', 320000, 1),
-(17, 'Access Point Ubiquiti UniFi U6 Pro', 'Redes', 175000, 3);
+(1, 'Switch Cisco Catalyst 24 Puertos Gigabit', 'Redes', 450000, 8),
+(2, 'Router Balanceador de Carga TP-Link Omada ER605', 'Redes', 89900, 12),
+(3, 'Access Point Ubiquiti UniFi U6 Plus Wi-Fi 6', 'Redes', 145000, 0),
+(4, 'Servidor NAS Synology DiskStation DS224+', 'Almacenamiento', 389000, 4),
+(5, 'Tarjeta de Red PCIe 10Gbps ASUS XG-C100C', 'Redes', 110000, 15),
+(6, 'Cable de Red Cat6 UTP 305mts Furukawa Azul', 'Redes', 125000, 20),
+(7, 'Gabinete Rack Mural 9U Certificado Metálico', 'Infraestructura', 95000, 0),
+(8, 'Inyector PoE+ Ubiquiti 30W Gigabit', 'Redes', 24990, 35),
+(9, 'Disco Duro Servidor WD Gold 4TB Enterprise SATA', 'Almacenamiento', 185000, 6),
+(10, 'Unidad SSD Kingston DC600M 960GB Enterprise', 'Almacenamiento', 135000, 10),
+(11, 'Memoria RAM Kingston Server Premier 32GB DDR5 ECC', 'Hardware', 160000, 0),
+(12, 'Disco SSD M.2 NVMe WD Black SN850X 1TB', 'Almacenamiento', 95000, 14),
+(13, 'Procesador AMD Ryzen 9 7900X 4.7GHz', 'Hardware', 499990, 3),
+(14, 'Procesador Intel Xeon Silver 4310 12-Core', 'Hardware', 620000, 2),
+(15, 'Memoria RAM Corsair Vengeance 16GB DDR5 5600MHz', 'Hardware', 65000, 25),
+(16, 'Fuente de Poder ASUS Prime 750W 80+ Gold APFC', 'Hardware', 105000, 0),
+(17, 'Refrigeración Líquida MSI MAG CoreLiquid M240', 'Hardware', 89990, 7),
+(18, 'Adaptador USB-C a Ethernet Gigabit Belkin', 'Conectividad', 29990, 40),
+(19, 'Kit Teclado y Mouse Inalámbrico Logitech MK270', 'Periféricos', 22990, 18),
+(20, 'Monitor Corporativo Dell 24\" IPS FHD HDMI/DP', 'Periféricos', 129900, 5);
 
 -- --------------------------------------------------------
 
@@ -217,8 +183,7 @@ CREATE TABLE IF NOT EXISTS `ventas` (
   `usuario_id` int NOT NULL,
   `total` int NOT NULL DEFAULT '0',
   `fecha` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_venta_cliente` (`usuario_id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -243,14 +208,7 @@ ALTER TABLE `detalle_ventas`
 -- Filtros para la tabla `movimientos_stock`
 --
 ALTER TABLE `movimientos_stock`
-  ADD CONSTRAINT `fk_mov_producto` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_mov_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
-
---
--- Filtros para la tabla `ventas`
---
-ALTER TABLE `ventas`
-  ADD CONSTRAINT `fk_venta_cliente` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
+  ADD CONSTRAINT `fk_mov_producto` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
