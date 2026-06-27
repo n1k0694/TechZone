@@ -104,3 +104,36 @@ exports.procesarVenta = async (req, res) => {
 };
 
 
+// Validación con expresiones regulares manteniendo la estructura MVC
+exports.validarDatosCotizacion = (req, res) => {
+    const { email, telefono } = req.body;
+
+    // 1. EXPRESIONES REGULARES (Reglas de negocio)
+    // Regex estándar para correos electrónicos
+    const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    
+    // Regex chileno: Acepta +569XXXXXXXX o 9XXXXXXXX (9 dígitos celulares)
+    const regexTelefono = /^(\+?56)?9\d{8}$/;
+
+    // 2. Evaluamos el Correo
+    if (!email || !regexEmail.test(email.trim())) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "El formato del correo electrónico no es válido (ejemplo@correo.cl)." 
+        });
+    }
+
+    // 3. Evaluamos el Teléfono
+    if (!telefono || !regexTelefono.test(telefono.trim())) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "El teléfono debe ser un celular válido en Chile (+569XXXXXXXX o 9XXXXXXXX)." 
+        });
+    }
+
+    // 4. Si pasa todas las reglas del negocio, respondemos con éxito
+    return res.json({ 
+        success: true, 
+        message: "Datos validados correctamente por el Controlador." 
+    });
+};

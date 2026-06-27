@@ -13,5 +13,6 @@ router.get('/pagina5', controllers.renderPagina5); // Cotizador
 router.get('/api/productos', controllers.getProductosFormateados);
 router.post('/api/inventario/agregar', controllers.agregarInventario); // Admin suma stock
 router.post('/api/ventas/comprar', controllers.procesarVenta);        // Cliente resta stock
+router.post('/api/validar', controllers.validarDatosCotizacion);
 
 module.exports = router;
