@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 27-06-2026 a las 03:07:36
+-- Tiempo de generación: 27-06-2026 a las 17:39:39
 -- Versión del servidor: 8.4.7
 -- Versión de PHP: 8.3.28
 
@@ -20,6 +20,71 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `techzone_db`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `cotizaciones`
+--
+
+DROP TABLE IF EXISTS `cotizaciones`;
+CREATE TABLE IF NOT EXISTS `cotizaciones` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `numero_documento` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cliente_email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cliente_telefono` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `monto_neto` int NOT NULL DEFAULT '0',
+  `monto_iva` int NOT NULL DEFAULT '0',
+  `total_general` int NOT NULL DEFAULT '0',
+  `fecha_emision` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_numero_documento` (`numero_documento`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `cotizaciones`
+--
+
+INSERT INTO `cotizaciones` (`id`, `numero_documento`, `cliente_email`, `cliente_telefono`, `monto_neto`, `monto_iva`, `total_general`, `fecha_emision`) VALUES
+(1, '#000461', 'nikolas.kastro@gmail.com', '965874125', 175000, 33250, 208250, '2026-06-27 14:12:13'),
+(2, '#0002', 'nikolas.kastro@gmail.com', '965874125', 125000, 23750, 148750, '2026-06-27 14:19:45'),
+(3, '#0003', 'nikolas.kastro@gmail.com', '965874125', 175000, 33250, 208250, '2026-06-27 14:20:26'),
+(4, '#0004', 'nikolas.kastro@gmail.com', '965874125', 95000, 18050, 113050, '2026-06-27 14:21:35'),
+(5, '#0005', 'nikolas.kastro@gmail.com', '965874125', 134990, 25648, 160638, '2026-06-27 14:33:40'),
+(6, '#0006', 'nikolas.kastro@gmail.com', '965874125', 125000, 23750, 148750, '2026-06-27 17:09:38'),
+(7, '#0007', 'nikolas.kastro@gmail.com', '965874125', 175000, 33250, 208250, '2026-06-27 17:30:14');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `detalle_cotizaciones`
+--
+
+DROP TABLE IF EXISTS `detalle_cotizaciones`;
+CREATE TABLE IF NOT EXISTS `detalle_cotizaciones` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `cotizacion_id` int NOT NULL,
+  `producto_id` int NOT NULL,
+  `cantidad` int NOT NULL,
+  `precio_unitario` int NOT NULL,
+  `subtotal` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_detalle_cotizacion_parent` (`cotizacion_id`),
+  KEY `fk_detalle_cotizacion_producto` (`producto_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `detalle_cotizaciones`
+--
+
+INSERT INTO `detalle_cotizaciones` (`id`, `cotizacion_id`, `producto_id`, `cantidad`, `precio_unitario`, `subtotal`) VALUES
+(1, 1, 17, 1, 175000, 175000),
+(2, 2, 15, 1, 125000, 125000),
+(3, 3, 17, 1, 175000, 175000),
+(4, 4, 12, 1, 95000, 95000),
+(5, 5, 13, 1, 134990, 134990),
+(6, 6, 15, 1, 125000, 125000),
+(7, 7, 17, 1, 175000, 175000);
 
 -- --------------------------------------------------------
 
@@ -55,14 +120,15 @@ CREATE TABLE IF NOT EXISTS `movimientos_stock` (
   PRIMARY KEY (`id`),
   KEY `fk_mov_producto` (`producto_id`),
   KEY `fk_mov_usuario` (`usuario_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `movimientos_stock`
 --
 
 INSERT INTO `movimientos_stock` (`id`, `producto_id`, `usuario_id`, `cantidad`, `fecha`) VALUES
-(1, 13, 1, 1, '2026-06-26 13:34:31');
+(1, 13, 1, 1, '2026-06-26 13:34:31'),
+(2, 12, 1, 1, '2026-06-27 14:21:19');
 
 -- --------------------------------------------------------
 
@@ -97,11 +163,11 @@ INSERT INTO `productos` (`id`, `nombre`, `categoria`, `precio`, `stock`) VALUES
 (10, 'Procesador AMD Ryzen 7 7800X3D AM5', 'Componentes', 399990, 8),
 (11, 'Fuente de Poder Seasonic Focus GX-850 Gold', 'Componentes', 115000, 10),
 (12, 'Disco SSD M.2 NVMe WD Black SN850X 1TB', 'Componentes', 95000, 0),
-(13, 'Mouse Logi G Pro X Superlight 2 Wireless', 'Perifericos', 134990, 1),
+(13, 'Mouse Logi G Pro X Superlight 2 Wireless', 'Perifericos', 134990, 0),
 (14, 'Teclado Mecánico Redragon Mitra K551 RGB', 'Perifericos', 38990, 15),
-(15, 'Audífonos HyperX Cloud III Wireless', 'Perifericos', 125000, 7),
+(15, 'Audífonos HyperX Cloud III Wireless', 'Perifericos', 125000, 5),
 (16, 'Switch Cisco Business 250 Smart 24-Port', 'Redes', 320000, 2),
-(17, 'Access Point Ubiquiti UniFi U6 Pro', 'Redes', 175000, 6);
+(17, 'Access Point Ubiquiti UniFi U6 Pro', 'Redes', 175000, 3);
 
 -- --------------------------------------------------------
 
@@ -155,6 +221,13 @@ CREATE TABLE IF NOT EXISTS `ventas` (
 --
 -- Restricciones para tablas volcadas
 --
+
+--
+-- Filtros para la tabla `detalle_cotizaciones`
+--
+ALTER TABLE `detalle_cotizaciones`
+  ADD CONSTRAINT `fk_detalle_cotizacion_parent` FOREIGN KEY (`cotizacion_id`) REFERENCES `cotizaciones` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_detalle_cotizacion_producto` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE RESTRICT;
 
 --
 -- Filtros para la tabla `detalle_ventas`
