@@ -15,4 +15,10 @@ router.post('/api/inventario/agregar', controllers.agregarInventario); // Admin 
 router.post('/api/ventas/comprar', controllers.procesarVenta);        // Cliente resta stock
 router.post('/api/validar', controllers.validarDatosCotizacion);
 
+// Endpoint que consultará el visor para armar la tabla HTML
+router.get('/api/cotizaciones-historial', controllers.obtenerHistorialCotizaciones);
+
+// Endpoint dinámico al que apuntará el href del icono PDF
+router.get('/cotizacion/ver/:id', controllers.renderizarCotizacionAlVuelo);
+
 module.exports = router;

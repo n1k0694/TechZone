@@ -87,8 +87,7 @@ function renderizarCarrito() {
 function procesarCotizacionPDF(e) {
     e.preventDefault();
     
-    // ADICIÓN: Captura del campo Nombre desde el formulario HTML
-    const nombre = document.getElementById('nombreCliente').value;
+    const nombre = document.getElementById('nombreCliente') ? document.getElementById('nombreCliente').value : '';
     const email = document.getElementById('email').value;
     const telefono = document.getElementById('telefono').value;
     const alertBox = document.getElementById('mensajeVenta');
@@ -100,11 +99,25 @@ function procesarCotizacionPDF(e) {
         return;
     }
 
-    // Petición de validación Regex al Controlador del Backend (Estructura MVC estricta)
+    if (nombre.trim().length < 3) {
+        alertBox.className = "alert alert-danger mt-3 py-2 text-center small fw-semibold";
+        alertBox.innerText = "El nombre del solicitante es obligatorio.";
+        alertBox.classList.remove('d-none');
+        return;
+    }
+
+    // MAPEO INTEGRAL MVC: Enviamos exclusivamente los IDs y cantidades requeridas
+    const itemsSimplificados = carrito.map(item => ({ id: item.id, cantidad: item.cantidad }));
+
     fetch('/api/validar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, telefono })
+        body: JSON.stringify({ 
+            nombre: nombre,
+            email: email, 
+            telefono: telefono,
+            items: itemsSimplificados 
+        })
     })
     .then(async res => {
         const data = await res.json();
@@ -115,73 +128,59 @@ function procesarCotizacionPDF(e) {
         if (data.success) {
             alertBox.classList.add('d-none');
 
-            // 1. Establecer fechas dinámicas en el PDF
             const hoy = new Date();
             const validez = new Date();
-            const numUnico = Date.now().toString().slice(-3);
+            validez.setDate(hoy.getDate() + 15);
 
-            document.getElementById('pdfNumeroDoc').innerText = `#000${numUnico}`;
-            validez.setDate(hoy.getDate() + 15); // Suma los 15 días reglamentarios
-
+            // RENDERIZADO EN EL DOM: Asignamos valores numéricos validados por el servidor
+            document.getElementById('pdfNumeroDoc').innerText = data.numeroDoc;
             document.getElementById('pdfFecha').innerText = hoy.toLocaleDateString('es-CL');
             document.getElementById('pdfValidez').innerText = validez.toLocaleDateString('es-CL');
 
-            // 2. Sincronizar identificadores del cliente (ADICIÓN: Se incluye la carga del Nombre)
-            document.getElementById('lblPdfNombre').innerText = nombre.trim();
+            if(document.getElementById('lblPdfNombre')) {
+                document.getElementById('lblPdfNombre').innerText = nombre.trim();
+            }
             document.getElementById('lblPdfEmail').innerText = email.trim();
             document.getElementById('lblPdfTelefono').innerText = telefono.trim();
 
-            // 3. Poblar filas de componentes y computar valores financieros
+            // Población dinámica de la tabla del PDF con los subtotales calculados por el backend
             const tablaPdfBody = document.getElementById('tabla-pdf-body');
-            if (tablaPdfBody) {
-                tablaPdfBody.innerHTML = '';
-                
-                let netoAcumulado = 0;
-                
-                carrito.forEach((item, index) => {
-                    const subtotalItem = item.precioRaw * item.cantidad;
-                    netoAcumulado += subtotalItem;
+            tablaPdfBody.innerHTML = '';
+            
+            data.detalles.forEach(item => {
+                tablaPdfBody.innerHTML += `
+                    <tr style="color: #555;">
+                        <td class="text-muted font-monospace" style="font-size: 0.85rem;">ID-${item.id}</td>
+                        <td class="fw-semibold text-dark">${item.nombre}</td>
+                        <td class="text-center">${item.cantidad} u.</td>
+                        <td class="text-end">$${item.precioUnitario.toLocaleString('es-CL')}</td>
+                        <td class="text-end fw-semibold text-dark">$${item.subtotal.toLocaleString('es-CL')}</td>
+                    </tr>`;
+            });
 
-                    tablaPdfBody.innerHTML += `
-                        <tr style="color: #555;">
-                            <td class="text-muted font-monospace" style="font-size: 0.85rem;">ID-${item.id || index + 1}</td>
-                            <td class="fw-semibold text-dark">${item.nombre}</td>
-                            <td class="text-center">${item.cantidad} u.</td>
-                            <td class="text-end">$${item.precioRaw.toLocaleString('es-CL')}</td>
-                            <td class="text-end fw-semibold text-dark">$${subtotalItem.toLocaleString('es-CL')}</td>
-                        </tr>`;
-                });
+            // Seteamos los totales financieros inalterables devueltos por el controlador
+            document.getElementById('pdfMontoNeto').innerText = `$${data.neto.toLocaleString('es-CL')}`;
+            document.getElementById('pdfMontoIva').innerText = `$${data.iva.toLocaleString('es-CL')}`;
+            document.getElementById('pdfTotalGeneral').innerText = `$${data.total.toLocaleString('es-CL')}`;
 
-                // 4. Calcular desglose financiero de Chile (Neto, IVA 19%, Total)
-                const ivaCalculado = Math.round(netoAcumulado * 0.19);
-                const totalGeneralCalculado = netoAcumulado + ivaCalculado;
-
-                document.getElementById('pdfMontoNeto').innerText = `$${netoAcumulado.toLocaleString('es-CL')}`;
-                document.getElementById('pdfMontoIva').innerText = `$${ivaCalculado.toLocaleString('es-CL')}`;
-                document.getElementById('pdfTotalGeneral').innerText = `$${totalGeneralCalculado.toLocaleString('es-CL')}`;
-            }
-
-            // 5. Configurar opciones de captura y descargar el archivo binario
+            // Manipulación de vista y guardado del archivo PDF (Tamaño Carta)
             const elementoPDF = document.getElementById('bloque-pdf');
-            if (elementoPDF) {
-                elementoPDF.style.display = 'block'; // Visibilidad transitoria para html2canvas
+            elementoPDF.style.display = 'block';
 
-                const opciones = {
-                    margin:       [10,5,10,5],
-                    filename:     `Cotizacion_TechZone_SpA_${numUnico}.pdf`,
-                    image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 5, useCORS: true, letterRendering: true },
-                    jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' } // Formato Carta establecido
-                };
+            const opciones = {
+                margin:       [10, 5, 10, 5],
+                filename:     `Cotizacion_TechZone_${data.numeroDoc.replace('#', '')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 3, useCORS: true, letterRendering: true },
+                jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
+            };
 
-                // Ejecución asíncrona del empaquetado PDF
-                html2pdf().set(opciones).from(elementoPDF).save().then(() => {
-                    elementoPDF.style.display = 'none'; // Reocultar bloque al terminar descarga
-                });
-            } else {
-                // Si usas el comportamiento nativo de impresión por CSS @media print
-                window.print();
-            }
+            html2pdf().set(opciones).from(elementoPDF).save().then(() => {
+                elementoPDF.style.display = 'none';
+                carrito = []; // Limpiamos la memoria del carrito local
+                renderizarCarrito(); // Re-renderizamos la vista de la grilla vacía
+                alert(`¡Cotización ${data.numeroDoc} procesada y guardada con éxito en la Base de Datos!`);
+            });
         }
     })
     .catch(err => {

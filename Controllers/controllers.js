@@ -104,149 +104,212 @@ exports.procesarVenta = async (req, res) => {
 };
 
 
-// Validación con expresiones regulares manteniendo la estructura MVC
-exports.validarDatosCotizacion = (req, res) => {
-    const { email, telefono } = req.body;
+exports.validarDatosCotizacion = async (req, res) => {
+    // El cliente ya no envía cálculos, solo los datos del formulario y el carrito básico
+    const { nombre, email, telefono, items } = req.body;
 
-    // 1. EXPRESIONES REGULARES (Reglas de negocio)
-    // Regex estándar para correos electrónicos
-    const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    
-    // Regex chileno: Acepta +569XXXXXXXX o 9XXXXXXXX (9 dígitos celulares)
-    const regexTelefono = /^(\+?56)?9\d{8}$/;
-
-    // 2. Evaluamos el Correo
-    if (!email || !regexEmail.test(email.trim())) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "El formato del correo electrónico no es válido (ejemplo@correo.cl)." 
-        });
-    }
-
-    // 3. Evaluamos el Teléfono
-    if (!telefono || !regexTelefono.test(telefono.trim())) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "El teléfono debe ser un celular válido en Chile (+569XXXXXXXX o 9XXXXXXXX)." 
-        });
-    }
-
-    // 4. Si pasa todas las reglas del negocio, respondemos con éxito
-    return res.json({ 
-        success: true, 
-        message: "Datos validados correctamente por el Controlador." 
-    });
-};
-
-exports.validarYRegistrarCotizacion = async (req, res) => {
-    // 1. Recibir los datos estructurados desde el Frontend
-    const { numeroDoc, nombre, email, telefono, neto, iva, total, items } = req.body;
-
-    // == VALIDACIONES CON EXPRESIONES REGULARES ==
+    // == 1. CAPA DE VALIDACIÓN CON EXPRESIONES REGULARES ==
     const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,100}$/;
     const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    const regexTelefono = /^(\+?56)?9\d{8}$/; // Formato celular chileno
+    const regexTelefono = /^(\+?56)?9\d{8}$/;
 
     if (!nombre || !regexNombre.test(nombre.trim())) {
-        return res.status(400).json({ success: false, message: "El nombre debe ser válido y tener al menos 3 caracteres." });
+        return res.status(400).json({ success: false, message: "El nombre debe ser válido (mínimo 3 caracteres)." });
     }
     if (!email || !regexEmail.test(email.trim())) {
         return res.status(400).json({ success: false, message: "El formato del correo electrónico no es válido." });
     }
     if (!telefono || !regexTelefono.test(telefono.trim())) {
-        return res.status(400).json({ success: false, message: "El teléfono debe ser un celular válido en Chile (+569XXXXXXXX)." });
+        return res.status(400).json({ success: false, message: "El teléfono debe ser un celular válido en Chile." });
     }
     if (!items || items.length === 0) {
-        return res.status(400).json({ success: false, message: "No se pueden registrar cotizaciones sin componentes en el carrito." });
+        return res.status(400).json({ success: false, message: "No se pueden procesar cotizaciones vacías." });
     }
 
-    // Obtener una conexión del pool para manejar la Transacción (Garantiza consistencia absoluta)
     const connection = await db.getConnection();
 
     try {
-        // Iniciar la transacción
         await connection.beginTransaction();
 
-        // == A. VERIFICACIÓN PREVIA DE STOCK ==
-        // Validamos que haya existencias suficientes de todos los productos antes de alterar nada
-        for (const item of items) {
-            const [prodRows] = await connection.query(
-                'SELECT stock, nombre FROM productos WHERE id = ?',[item.id]
-            );
+        let netoAcumulado = 0;
+        const detallesCalculados = [];
 
-            if (prodRows.length === 0) {
-                throw new Error(`El producto con ID ${item.id} no existe en el catálogo.`);
-            }
+        // == 2. VERIFICACIÓN DE EXISTENCIAS Y CÁLCULOS EN EL SERVIDOR ==
+        for (const item of items) {
+            const [prodRows] = await connection.query('SELECT precio, stock, nombre FROM productos WHERE id = ?', [item.id]);
+            if (prodRows.length === 0) throw new Error(`El componente con ID ${item.id} no existe.`);
 
             const productoBD = prodRows[0];
             if (productoBD.stock < item.cantidad) {
-                throw new Error(`Stock insuficiente para "${productoBD.nombre}". Disponible: ${productoBD.stock} u., Solicitado: ${item.cantidad} u.`);
+                throw new Error(`Stock insuficiente para "${productoBD.nombre}". Disponible: ${productoBD.stock} u.`);
             }
+
+            // Calculamos el subtotal usando el precio verídico e inalterable de la BD
+            const subtotalItem = productoBD.precio * item.cantidad;
+            netoAcumulado += subtotalItem;
+
+            // Almacenamos el desglose para devolverlo estructurado al frontend
+            detallesCalculados.push({
+                id: item.id,
+                nombre: productoBD.nombre,
+                cantidad: item.cantidad,
+                precioUnitario: productoBD.precio,
+                subtotal: subtotalItem
+            });
         }
 
-        // == B. INSERTAR CABECERA DE LA COTIZACIÓN ==
+        const ivaCalculado = Math.round(netoAcumulado * 0.19);
+        const totalGeneral = netoAcumulado + ivaCalculado;
+
+        // == 3. PERSISTENCIA DE LA TRANSACCIÓN EN MYSQL ==
         const queryCabecera = `
             INSERT INTO cotizaciones (numero_documento, cliente_email, cliente_telefono, monto_neto, monto_iva, total_general, fecha_emision)
             VALUES (?, ?, ?, ?, ?, ?, NOW())
         `;
-        const [resultadoCabecera] = await connection.query(queryCabecera, [
-            numeroDoc, 
-            email.trim(), 
-            telefono.trim(), 
-            neto, 
-            iva, 
-            total
-        ]);
-        
-        const cotizacionId = resultadoCabecera.insertId;
+        const [resultadoCabecera] = await connection.query(queryCabecera, ['PENDIENTE', email.trim(), telefono.trim(), netoAcumulado, ivaCalculado, totalGeneral]);
 
-        // == C. DETALLES Y REBAJA DE STOCK ==
-        const queryDetalle = `INSERT INTO detalle_cotizaciones (cotizacion_id, producto_id, cantidad, precio_unitario, subtotal)
+        const cotizacionId = resultadoCabecera.insertId;
+        const numeroDocFormat = `#000${cotizacionId}`;
+
+        // Sincronizamos la fila con su número de documento real basado en el ID correlativo
+        await connection.query('UPDATE cotizaciones SET numero_documento = ? WHERE id = ?', [numeroDocFormat, cotizacionId]);
+
+        const queryDetalle = `
+            INSERT INTO detalle_cotizaciones (cotizacion_id, producto_id, cantidad, precio_unitario, subtotal)
             VALUES (?, ?, ?, ?, ?)
         `;
-        const queryActualizarStock = `
-            UPDATE productos 
-            SET stock = stock - ? 
-            WHERE id = ?
-        `;
+        const queryActualizarStock = `UPDATE productos SET stock = stock - ? WHERE id = ?`;
 
-        for (const item of items) {
-            const subtotalItem = item.precioRaw * item.cantidad;
-
-            // 1. Insertar el renglón del detalle
-            await connection.query(queryDetalle, [
-                cotizacionId, 
-                item.id, 
-                item.cantidad, 
-                item.precioRaw, 
-                subtotalItem
-            ]);
-
-            // 2. Rebajar físicamente el stock en la tabla productos
-            await connection.query(queryActualizarStock, [
-                item.cantidad, 
-                item.id
-            ]);
+        for (const detalle of detallesCalculados) {
+            await connection.query(queryDetalle, [cotizacionId, detalle.id, detalle.cantidad, detalle.precioUnitario, detalle.subtotal]);
+            await connection.query(queryActualizarStock, [detalle.cantidad, detalle.id]);
         }
 
-        // Si todo anduvo perfecto, confirmamos los cambios de forma permanente en MySQL
         await connection.commit();
 
-        return res.json({ 
-            success: true, 
-            message: `Cotización ${numeroDoc} guardada con éxito y stock actualizado.` 
+        // RETORNAMOS TODA LA INFORMACIÓN CALCULADA OFICIAL Y EL ID CORRELATIVO
+        return res.json({
+            success: true,
+            message: "Cotización registrada con éxito.",
+            numeroDoc: numeroDocFormat,
+            neto: netoAcumulado,
+            iva: ivaCalculado,
+            total: totalGeneral,
+            detalles: detallesCalculados // Enviamos el array listo para mapear en el PDF
         });
 
     } catch (error) {
-        // Si algo falla (ej. se acaba el stock a mitad de camino), deshacemos todo para evitar datos corruptos
         await connection.rollback();
-        console.error("Error en la transacción de cotización:", error);
-        return res.status(500).json({ 
-            success: false, 
-            message: error.message || "Error interno del servidor al procesar la cotización en la Base de Datos." 
-        });
+        console.error(error);
+        return res.status(500).json({ success: false, message: error.message || "Error interno del servidor." });
     } finally {
-        // Liberamos la conexión de vuelta al pool
         connection.release();
+    }
+};
+
+// 1. NUEVO MÉTODO: Trae el listado histórico de cotizaciones para el visor
+exports.obtenerHistorialCotizaciones = async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM cotizaciones ORDER BY id DESC;');
+        return res.json({ success: true, cotizaciones: rows });
+    } catch (error) {
+        console.error("Error al obtener historial:", error);
+        return res.status(500).json({ success: false, message: "Error interno del servidor." });
+    }
+};
+
+// 2. NUEVO MÉTODO: Genera "al vuelo" el documento imprimible al pulsar el ícono
+exports.renderizarCotizacionAlVuelo = async (req, res) => {
+    const { id } = req.params; // Capturamos el ID desde la URL (ej: /cotizacion/ver/5)
+
+    try {
+        // A. Buscamos la cabecera de la cotización
+        const [cotizacionRows] = await db.query('SELECT * FROM cotizaciones WHERE id = ?', [id]);
+        if (cotizacionRows.length === 0) return res.status(404).send("La cotización solicitada no existe.");
+        const cotizacion = cotizacionRows[0];
+
+        // B. Buscamos el desglose uniendo (JOIN) con la tabla productos para obtener los nombres reales
+        const [detalleRows] = await db.query(
+            `SELECT d.*, p.nombre FROM detalle_cotizaciones d JOIN productos p ON d.producto_id = p.id WHERE d.cotizacion_id = ?`, [id]
+        );
+
+        // C. Construimos una plantilla HTML limpia y optimizada para impresión (Tamaño Carta)
+        let filasTabla = '';
+        detalleRows.forEach(d => {
+            filasTabla += `
+                <tr style="color: #444;">
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">ID-${d.producto_id}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: 600;">${d.nombre}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${d.cantidad} u.</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">$${d.precio_unitario.toLocaleString('es-CL')}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: 600;">$${d.subtotal.toLocaleString('es-CL')}</td>
+                </tr>`;
+        });
+
+        const plantillaHtml = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>Cotización Oficial ${cotizacion.numero_documento}</title>
+            <style>
+                body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+                .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #2b3e50; padding-bottom: 20px; }
+                .header h1 { margin: 0; color: #2b3e50; font-size: 26px; }
+                .info-block { margin-top: 30px; margin-bottom: 30px; font-size: 14px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th { background-color: #2b3e50; color: white; padding: 12px; text-align: left; font-size: 14px; }
+                .totales { text-align: right; margin-top: 30px; font-size: 15px; }
+                .totales p { margin: 5px 0; }
+                .btn-print { background-color: #e74c3c; color: white; border: none; padding: 12px 25px; font-size: 15px; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 40px; }
+                @media print { .no-print { display: none; } body { padding: 0; } }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>TECHZONE SpA</h1>
+                <div style="text-align: right;">
+                    <h3 style="margin: 0; color: #e74c3c;">COTIZACIÓN</h3>
+                    <p style="margin: 5px 0 0 0; font-weight: bold;">${cotizacion.numero_documento}</p>
+                </div>
+            </div>
+            
+            <div class="info-block">
+                <p>
+                    <strong>Destinatario / Email:</strong> ${cotizacion.cliente_email}<br>
+                    <strong>Teléfono de Contacto:</strong> ${cotizacion.cliente_telefono}<br>
+                    <strong>Fecha de Emisión:</strong> ${new Date(cotizacion.fecha_emision).toLocaleDateString('es-CL')}
+                </p>
+            </div>           
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Código</th>
+                        <th style="width: 45%;">Componente Técnico</th>
+                        <th style="width: 10%; text-align: center;">Cant.</th>
+                        <th style="width: 15%; text-align: right;">P. Unitario</th>
+                        <th style="width: 15%; text-align: right;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${filasTabla}
+                </tbody>
+            </table>
+            <div class="totales">
+                <p>Neto Acumulado: <strong>$${cotizacion.monto_neto.toLocaleString('es-CL')}</strong></p>
+                <p>IVA (19%): <strong>$${cotizacion.monto_iva.toLocaleString('es-CL')}</strong></p>
+                <p style="font-size: 20px; color: #2b3e50; margin-top: 10px;">Total General: <strong>$${cotizacion.total_general.toLocaleString('es-CL')}</strong></p>
+            </div>
+            <div style="text-center: center; text-align: center;" class="no-print">
+                <button onclick="window.print()" class="btn-print">Imprimir / Guardar en PDF</button>
+            </div>
+        </body>
+        </html>`;
+        // Enviamos el HTML directo al navegador para que se visualice
+        return res.send(plantillaHtml);
+
+    } catch (error) {
+        console.error("Error al generar vista de cotización:", error);
+        return res.status(500).send("Error interno al renderizar el documento técnico.");
     }
 };
