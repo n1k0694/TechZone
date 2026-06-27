@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 27-06-2026 a las 17:39:39
+-- Tiempo de generación: 27-06-2026 a las 17:48:07
 -- Versión del servidor: 8.4.7
 -- Versión de PHP: 8.3.28
 
@@ -31,6 +31,7 @@ DROP TABLE IF EXISTS `cotizaciones`;
 CREATE TABLE IF NOT EXISTS `cotizaciones` (
   `id` int NOT NULL AUTO_INCREMENT,
   `numero_documento` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cliente_nombre` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
   `cliente_email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `cliente_telefono` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `monto_neto` int NOT NULL DEFAULT '0',
@@ -39,20 +40,21 @@ CREATE TABLE IF NOT EXISTS `cotizaciones` (
   `fecha_emision` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_numero_documento` (`numero_documento`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `cotizaciones`
 --
 
-INSERT INTO `cotizaciones` (`id`, `numero_documento`, `cliente_email`, `cliente_telefono`, `monto_neto`, `monto_iva`, `total_general`, `fecha_emision`) VALUES
-(1, '#000461', 'nikolas.kastro@gmail.com', '965874125', 175000, 33250, 208250, '2026-06-27 14:12:13'),
-(2, '#0002', 'nikolas.kastro@gmail.com', '965874125', 125000, 23750, 148750, '2026-06-27 14:19:45'),
-(3, '#0003', 'nikolas.kastro@gmail.com', '965874125', 175000, 33250, 208250, '2026-06-27 14:20:26'),
-(4, '#0004', 'nikolas.kastro@gmail.com', '965874125', 95000, 18050, 113050, '2026-06-27 14:21:35'),
-(5, '#0005', 'nikolas.kastro@gmail.com', '965874125', 134990, 25648, 160638, '2026-06-27 14:33:40'),
-(6, '#0006', 'nikolas.kastro@gmail.com', '965874125', 125000, 23750, 148750, '2026-06-27 17:09:38'),
-(7, '#0007', 'nikolas.kastro@gmail.com', '965874125', 175000, 33250, 208250, '2026-06-27 17:30:14');
+INSERT INTO `cotizaciones` (`id`, `numero_documento`, `cliente_nombre`, `cliente_email`, `cliente_telefono`, `monto_neto`, `monto_iva`, `total_general`, `fecha_emision`) VALUES
+(1, '#000461', '', 'nikolas.kastro@gmail.com', '965874125', 175000, 33250, 208250, '2026-06-27 14:12:13'),
+(2, '#0002', '', 'nikolas.kastro@gmail.com', '965874125', 125000, 23750, 148750, '2026-06-27 14:19:45'),
+(3, '#0003', '', 'nikolas.kastro@gmail.com', '965874125', 175000, 33250, 208250, '2026-06-27 14:20:26'),
+(4, '#0004', '', 'nikolas.kastro@gmail.com', '965874125', 95000, 18050, 113050, '2026-06-27 14:21:35'),
+(5, '#0005', 'Isabel Castro', 'nikolas.kastro@gmail.com', '965874125', 134990, 25648, 160638, '2026-06-27 14:33:40'),
+(6, '#0006', 'Rocio Castro', 'nikolas.kastro@gmail.com', '965874125', 125000, 23750, 148750, '2026-06-27 17:09:38'),
+(7, '#0007', 'Carolina Fuica', 'nikolas.kastro@gmail.com', '965874125', 175000, 33250, 208250, '2026-06-27 17:30:14'),
+(8, '#0008', 'Nicolas Castro', 'nikolas.kastro@gmail.com', '965874125', 320000, 60800, 380800, '2026-06-27 17:46:34');
 
 -- --------------------------------------------------------
 
@@ -71,7 +73,7 @@ CREATE TABLE IF NOT EXISTS `detalle_cotizaciones` (
   PRIMARY KEY (`id`),
   KEY `fk_detalle_cotizacion_parent` (`cotizacion_id`),
   KEY `fk_detalle_cotizacion_producto` (`producto_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `detalle_cotizaciones`
@@ -84,7 +86,8 @@ INSERT INTO `detalle_cotizaciones` (`id`, `cotizacion_id`, `producto_id`, `canti
 (4, 4, 12, 1, 95000, 95000),
 (5, 5, 13, 1, 134990, 134990),
 (6, 6, 15, 1, 125000, 125000),
-(7, 7, 17, 1, 175000, 175000);
+(7, 7, 17, 1, 175000, 175000),
+(8, 8, 16, 1, 320000, 320000);
 
 -- --------------------------------------------------------
 
@@ -166,7 +169,7 @@ INSERT INTO `productos` (`id`, `nombre`, `categoria`, `precio`, `stock`) VALUES
 (13, 'Mouse Logi G Pro X Superlight 2 Wireless', 'Perifericos', 134990, 0),
 (14, 'Teclado Mecánico Redragon Mitra K551 RGB', 'Perifericos', 38990, 15),
 (15, 'Audífonos HyperX Cloud III Wireless', 'Perifericos', 125000, 5),
-(16, 'Switch Cisco Business 250 Smart 24-Port', 'Redes', 320000, 2),
+(16, 'Switch Cisco Business 250 Smart 24-Port', 'Redes', 320000, 1),
 (17, 'Access Point Ubiquiti UniFi U6 Pro', 'Redes', 175000, 3);
 
 -- --------------------------------------------------------
