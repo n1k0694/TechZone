@@ -14,7 +14,7 @@ function obtenerProductos() {
         .then(datos => {
             catalogoProductos = datos.filter(p => p.stock > 0);
             const select = document.getElementById('selectVentaProducto');
-            select.innerHTML = '<option value="" disabled selected>Selecciona un componente...</option>';
+            select.innerHTML = '<option value="" disabled selected>Selecciona un componente corporativo...</option>';
             catalogoProductos.forEach(p => {
                 select.innerHTML += `<option value="${p.id}">${p.nombre} ($${p.precioRaw.toLocaleString('es-CL')} - Disp: ${p.stock} u.)</option>`;
             });
@@ -31,7 +31,7 @@ function agregarAlCarrito() {
 
     if (yaEnCarrito) {
         if (yaEnCarrito.cantidad < prod.stock) yaEnCarrito.cantidad++;
-        else return alert("Existencias máximas del producto alcanzadas.");
+        else return alert("Límite de stock máximo alcanzado.");
     } else {
         carrito.push({ id: prod.id, nombre: prod.nombre, precioRaw: prod.precioRaw, cantidad: 1 });
     }
@@ -68,28 +68,28 @@ function procesarCotizacionPDF(e) {
     const email = document.getElementById('email').value.trim();
     const telefono = document.getElementById('telefono').value.trim();
 
-    if (carrito.length === 0) return alert("El presupuesto debe contener al menos un componente.");
+    if (carrito.length === 0) return alert("Por favor, agregue al menos un componente al carro.");
 
     const iva = Math.round(totalNeto * 0.19);
     const total = totalNeto + iva;
 
-    // Despacho nativo de datos sin parámetros URL extras
     fetch('/api/validar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, email, telefono, neto: totalNeto, iva, total, items: carrito })
     })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                // Se abre la pestaña llamando al folio ID real
-                window.open(`/cotizacion/ver/${data.idReal}`, '_blank');
-                carrito = [];
-                renderizarCarrito();
-                document.getElementById('formCheckout').reset();
-            } else {
-                alert(data.message);
-            }
-        })
-        .catch(() => alert("Error de comunicación con el servidor central."));
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // El backend ya guardó el nombre; abrimos la pestaña limpia de impresión nativa
+            window.open(`/cotizacion/ver/${data.idReal}`, '_blank');
+            carrito = [];
+            renderizarCarrito();
+            document.getElementById('formCheckout').reset();
+            alert(`¡Documento ${data.numeroDoc} emitido y guardado con éxito!`);
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(() => alert("Error al procesar la cotización en el servidor central."));
 }
