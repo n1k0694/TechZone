@@ -86,6 +86,9 @@ function renderizarCarrito() {
 
 function procesarCotizacionPDF(e) {
     e.preventDefault();
+    
+    // ADICIÓN: Captura del campo Nombre desde el formulario HTML
+    const nombre = document.getElementById('nombreCliente').value;
     const email = document.getElementById('email').value;
     const telefono = document.getElementById('telefono').value;
     const alertBox = document.getElementById('mensajeVenta');
@@ -123,54 +126,62 @@ function procesarCotizacionPDF(e) {
             document.getElementById('pdfFecha').innerText = hoy.toLocaleDateString('es-CL');
             document.getElementById('pdfValidez').innerText = validez.toLocaleDateString('es-CL');
 
-            // 2. Sincronizar identificadores del cliente
+            // 2. Sincronizar identificadores del cliente (ADICIÓN: Se incluye la carga del Nombre)
+            document.getElementById('lblPdfNombre').innerText = nombre.trim();
             document.getElementById('lblPdfEmail').innerText = email.trim();
             document.getElementById('lblPdfTelefono').innerText = telefono.trim();
 
             // 3. Poblar filas de componentes y computar valores financieros
             const tablaPdfBody = document.getElementById('tabla-pdf-body');
-            tablaPdfBody.innerHTML = '';
-            
-            let netoAcumulado = 0;
-            
-            carrito.forEach((item, index) => {
-                const subtotalItem = item.precioRaw * item.cantidad;
-                netoAcumulado += subtotalItem;
+            if (tablaPdfBody) {
+                tablaPdfBody.innerHTML = '';
+                
+                let netoAcumulado = 0;
+                
+                carrito.forEach((item, index) => {
+                    const subtotalItem = item.precioRaw * item.cantidad;
+                    netoAcumulado += subtotalItem;
 
-                tablaPdfBody.innerHTML += `
-                    <tr style="color: #555;">
-                        <td class="text-muted font-monospace" style="font-size: 0.85rem;">ID-${item.id || index + 1}</td>
-                        <td class="fw-semibold text-dark">${item.nombre}</td>
-                        <td class="text-center">${item.cantidad} น.</td>
-                        <td class="text-end">$${item.precioRaw.toLocaleString('es-CL')}</td>
-                        <td class="text-end fw-semibold text-dark">$${subtotalItem.toLocaleString('es-CL')}</td>
-                    </tr>`;
-            });
+                    tablaPdfBody.innerHTML += `
+                        <tr style="color: #555;">
+                            <td class="text-muted font-monospace" style="font-size: 0.85rem;">ID-${item.id || index + 1}</td>
+                            <td class="fw-semibold text-dark">${item.nombre}</td>
+                            <td class="text-center">${item.cantidad} u.</td>
+                            <td class="text-end">$${item.precioRaw.toLocaleString('es-CL')}</td>
+                            <td class="text-end fw-semibold text-dark">$${subtotalItem.toLocaleString('es-CL')}</td>
+                        </tr>`;
+                });
 
-            // 4. Calcular desglose financiero de Chile (Neto, IVA 19%, Total)
-            const ivaCalculado = Math.round(netoAcumulado * 0.19);
-            const totalGeneralCalculado = netoAcumulado + ivaCalculado;
+                // 4. Calcular desglose financiero de Chile (Neto, IVA 19%, Total)
+                const ivaCalculado = Math.round(netoAcumulado * 0.19);
+                const totalGeneralCalculado = netoAcumulado + ivaCalculado;
 
-            document.getElementById('pdfMontoNeto').innerText = `$${netoAcumulado.toLocaleString('es-CL')}`;
-            document.getElementById('pdfMontoIva').innerText = `$${ivaCalculado.toLocaleString('es-CL')}`;
-            document.getElementById('pdfTotalGeneral').innerText = `$${totalGeneralCalculado.toLocaleString('es-CL')}`;
+                document.getElementById('pdfMontoNeto').innerText = `$${netoAcumulado.toLocaleString('es-CL')}`;
+                document.getElementById('pdfMontoIva').innerText = `$${ivaCalculado.toLocaleString('es-CL')}`;
+                document.getElementById('pdfTotalGeneral').innerText = `$${totalGeneralCalculado.toLocaleString('es-CL')}`;
+            }
 
             // 5. Configurar opciones de captura y descargar el archivo binario
             const elementoPDF = document.getElementById('bloque-pdf');
-            elementoPDF.style.display = 'block'; // Visibilidad transitoria para html2canvas
+            if (elementoPDF) {
+                elementoPDF.style.display = 'block'; // Visibilidad transitoria para html2canvas
 
-            const opciones = {
-                margin:       [10,5,10,5],
-                filename:     `Cotizacion_TechZone_SpA_${numUnico}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 5, useCORS: true, letterRendering: true },
-                jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
-            };
+                const opciones = {
+                    margin:       [10,5,10,5],
+                    filename:     `Cotizacion_TechZone_SpA_${numUnico}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 5, useCORS: true, letterRendering: true },
+                    jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' } // Formato Carta establecido
+                };
 
-            // Ejecución asíncrona del empaquetado PDF
-            html2pdf().set(opciones).from(elementoPDF).save().then(() => {
-                elementoPDF.style.display = 'none'; // Reocultar bloque al terminar descarga
-            });
+                // Ejecución asíncrona del empaquetado PDF
+                html2pdf().set(opciones).from(elementoPDF).save().then(() => {
+                    elementoPDF.style.display = 'none'; // Reocultar bloque al terminar descarga
+                });
+            } else {
+                // Si usas el comportamiento nativo de impresión por CSS @media print
+                window.print();
+            }
         }
     })
     .catch(err => {

@@ -137,3 +137,116 @@ exports.validarDatosCotizacion = (req, res) => {
         message: "Datos validados correctamente por el Controlador." 
     });
 };
+
+exports.validarYRegistrarCotizacion = async (req, res) => {
+    // 1. Recibir los datos estructurados desde el Frontend
+    const { numeroDoc, nombre, email, telefono, neto, iva, total, items } = req.body;
+
+    // == VALIDACIONES CON EXPRESIONES REGULARES ==
+    const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,100}$/;
+    const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const regexTelefono = /^(\+?56)?9\d{8}$/; // Formato celular chileno
+
+    if (!nombre || !regexNombre.test(nombre.trim())) {
+        return res.status(400).json({ success: false, message: "El nombre debe ser válido y tener al menos 3 caracteres." });
+    }
+    if (!email || !regexEmail.test(email.trim())) {
+        return res.status(400).json({ success: false, message: "El formato del correo electrónico no es válido." });
+    }
+    if (!telefono || !regexTelefono.test(telefono.trim())) {
+        return res.status(400).json({ success: false, message: "El teléfono debe ser un celular válido en Chile (+569XXXXXXXX)." });
+    }
+    if (!items || items.length === 0) {
+        return res.status(400).json({ success: false, message: "No se pueden registrar cotizaciones sin componentes en el carrito." });
+    }
+
+    // Obtener una conexión del pool para manejar la Transacción (Garantiza consistencia absoluta)
+    const connection = await db.getConnection();
+
+    try {
+        // Iniciar la transacción
+        await connection.beginTransaction();
+
+        // == A. VERIFICACIÓN PREVIA DE STOCK ==
+        // Validamos que haya existencias suficientes de todos los productos antes de alterar nada
+        for (const item of items) {
+            const [prodRows] = await connection.query(
+                'SELECT stock, nombre FROM productos WHERE id = ?',[item.id]
+            );
+
+            if (prodRows.length === 0) {
+                throw new Error(`El producto con ID ${item.id} no existe en el catálogo.`);
+            }
+
+            const productoBD = prodRows[0];
+            if (productoBD.stock < item.cantidad) {
+                throw new Error(`Stock insuficiente para "${productoBD.nombre}". Disponible: ${productoBD.stock} u., Solicitado: ${item.cantidad} u.`);
+            }
+        }
+
+        // == B. INSERTAR CABECERA DE LA COTIZACIÓN ==
+        const queryCabecera = `
+            INSERT INTO cotizaciones (numero_documento, cliente_email, cliente_telefono, monto_neto, monto_iva, total_general, fecha_emision)
+            VALUES (?, ?, ?, ?, ?, ?, NOW())
+        `;
+        const [resultadoCabecera] = await connection.query(queryCabecera, [
+            numeroDoc, 
+            email.trim(), 
+            telefono.trim(), 
+            neto, 
+            iva, 
+            total
+        ]);
+        
+        const cotizacionId = resultadoCabecera.insertId;
+
+        // == C. DETALLES Y REBAJA DE STOCK ==
+        const queryDetalle = `INSERT INTO detalle_cotizaciones (cotizacion_id, producto_id, cantidad, precio_unitario, subtotal)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+        const queryActualizarStock = `
+            UPDATE productos 
+            SET stock = stock - ? 
+            WHERE id = ?
+        `;
+
+        for (const item of items) {
+            const subtotalItem = item.precioRaw * item.cantidad;
+
+            // 1. Insertar el renglón del detalle
+            await connection.query(queryDetalle, [
+                cotizacionId, 
+                item.id, 
+                item.cantidad, 
+                item.precioRaw, 
+                subtotalItem
+            ]);
+
+            // 2. Rebajar físicamente el stock en la tabla productos
+            await connection.query(queryActualizarStock, [
+                item.cantidad, 
+                item.id
+            ]);
+        }
+
+        // Si todo anduvo perfecto, confirmamos los cambios de forma permanente en MySQL
+        await connection.commit();
+
+        return res.json({ 
+            success: true, 
+            message: `Cotización ${numeroDoc} guardada con éxito y stock actualizado.` 
+        });
+
+    } catch (error) {
+        // Si algo falla (ej. se acaba el stock a mitad de camino), deshacemos todo para evitar datos corruptos
+        await connection.rollback();
+        console.error("Error en la transacción de cotización:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message || "Error interno del servidor al procesar la cotización en la Base de Datos." 
+        });
+    } finally {
+        // Liberamos la conexión de vuelta al pool
+        connection.release();
+    }
+};
