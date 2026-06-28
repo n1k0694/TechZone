@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +13,7 @@
     </script>
     <title>Módulo de Cotizaciones - TechZone SpA</title>
 </head>
+
 <body class="bg-light">
     <div id="header"></div>
 
@@ -29,7 +31,8 @@
                                 <select id="selectVentaProducto" class="form-select"></select>
                             </div>
                             <div class="col-md-4">
-                                <button type="button" id="btnAgregarCarrito" class="btn btn-primary w-100 fw-bold"><i class="bi bi-plus-lg"></i> Agregar</button>
+                                <button type="button" id="btnAgregarCarrito" class="btn btn-primary w-100 fw-bold"><i
+                                        class="bi bi-plus-lg"></i> Agregar</button>
                             </div>
                         </div>
                     </div>
@@ -47,13 +50,15 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Email Corporativo:</label>
-                                <input type="email" id="email" class="form-control" placeholder="nicolas@empresa.cl" required>
+                                <input type="email" id="email" class="form-control" placeholder="usuario@empresa.cl" required>
                             </div>
                             <div class="mb-4">
                                 <label class="form-label fw-semibold">Teléfono Celular:</label>
                                 <input type="text" id="telefono" class="form-control" placeholder="+56912345678" required>
                             </div>
-                            <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow-sm"><i class="bi bi-file-earmark-pdf-fill me-1"></i> Generar Cotización</button>
+                            <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow-sm">
+                                <i class="bi bi-file-earmark-pdf-fill me-1"></i> Generar Cotización
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -66,7 +71,13 @@
                     </div>
                     <div class="card-body p-4 bg-white">
                         <table class="table align-middle">
-                            <thead class="table-light"><tr><th>Componente</th><th class="text-center">Cant.</th><th class="text-end">Subtotal</th></tr></thead>
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Componente</th>
+                                    <th class="text-center">Cant.</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
                             <tbody id="tabla-carrito-body"></tbody>
                         </table>
                         <hr>
@@ -84,4 +95,5 @@
     <script src="/js/cotizaciones.js"></script>
     <script src="/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

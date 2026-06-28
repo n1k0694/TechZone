@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/style.css">
     <script>
+        // Carga modular de los componentes reutilizables
         fetch("/Components/header.html").then(res => res.text()).then(html => { document.getElementById("header").innerHTML = html; });
         fetch("/Components/footer.html").then(res => res.text()).then(html => { document.getElementById("footer").innerHTML = html; });
     </script>
@@ -23,42 +24,24 @@
                 <h5 class="mb-0"><i class="bi bi-search me-2"></i>Consola de Auditoría: Historial General de Cotizaciones</h5>
             </div>
             <div class="card-body p-4 bg-white">
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-info-circle-fill me-1 text-primary"></i> 
-                    Desde este panel puedes auditar todos los presupuestos emitidos. Al pulsar sobre el ícono de 
-                    <strong class="text-danger">PDF</strong> a la izquierda, el servidor compilará la información desde MySQL en tiempo real.
-                </p>
-            </div>
-        </div>
-
-        <div class="card shadow-sm border-0 mb-5">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
-                <h5 class="mb-0"><i class="bi bi-folder-fill me-2"></i>Registros Guardados en Sistema</h5>
-                <div>
-                    <button class="btn btn-outline-info btn-sm fw-bold me-2" id="btnRestablecerVisor">
-                        <i class="bi bi-arrow-clockwise"></i> Mostrar Todo
-                    </button>
-                    <button class="btn btn-warning btn-sm text-dark fw-bold" id="btnFiltrarGrandes">
-                        <i class="bi bi-funnel-fill me-1"></i> Totales > $1.000.000
-                    </button>
-                </div>
-            </div>
-            <div class="card-body p-4 bg-white">
+                <p class="text-muted small">A continuación, se despliega el registro histórico de los presupuestos emitidos.</p>
+                
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                    <table class="table table-hover align-middle small">
+                        <thead class="table-dark">
                             <tr>
-                                <th class="text-center" style="width: 8%;">PDF</th>
-                                <th style="width: 15%;">N° Documento</th>
-                                <th style="width: 20%;">Fecha Emisión</th>
-                                <th style="width: 37%;">Email Solicitante</th>
-                                <th class="text-end" style="width: 20%;">Total General</th>
+                                <th style="width: 80px;" class="text-center">Visualizar</th>
+                                <th style="width: 150px;">N° Documento</th>
+                                <th style="width: 140px;">Fecha Emisión</th>
+                                <th>Email Solicitante</th>
+                                <th style="width: 160px;" class="text-end">Total General (c/IVA)</th>
                             </tr>
                         </thead>
-                        <tbody id="tabla-visor-body">
+                        <tbody id="tabla-cotizaciones-body">
                             <tr>
                                 <td colspan="5" class="text-center py-4 text-muted">
-                                    <span class="spinner-border spinner-border-sm me-2"></span>Sincronizando registros con MySQL...
+                                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                    Sincronizando registros con MySQL...
                                 </td>
                             </tr>
                         </tbody>
@@ -69,63 +52,8 @@
     </div>
 
     <div id="footer"></div>
-
-    <script>
-        let matrizCotizaciones = [];
-
-        document.addEventListener("DOMContentLoaded", () => {
-            obtenerHistorial();
-
-            document.getElementById('btnRestablecerVisor').addEventListener('click', () => {
-                renderizarTablaVisor(matrizCotizaciones);
-            });
-
-            document.getElementById('btnFiltrarGrandes').addEventListener('click', () => {
-                const grandesMontos = matrizCotizaciones.filter(c => c.total_general > 1000000);
-                renderizarTablaVisor(grandesMontos);
-            });
-        });
-
-        function obtenerHistorial() {
-            fetch('/api/cotizaciones-historial')
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        matrizCotizaciones = data.cotizaciones;
-                        renderizarTablaVisor(matrizCotizaciones);
-                    }
-                })
-                .catch(err => {
-                    document.getElementById('tabla-visor-body').innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3 fw-bold">Error al conectar con la base de datos.</td></tr>`;
-                });
-        }
-
-        function renderizarTablaVisor(coleccion) {
-            const cuerpo = document.getElementById('tabla-visor-body');
-            cuerpo.innerHTML = '';
-
-            if (coleccion.length === 0) {
-                cuerpo.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted small">No se encontraron cotizaciones.</td></tr>`;
-                return;
-            }
-
-            coleccion.forEach(c => {
-                const fechaFormateada = new Date(c.fecha_emision).toLocaleDateString('es-CL');
-                cuerpo.innerHTML += `
-                    <tr>
-                        <td class="text-center">
-                            <a href="/cotizacion/ver/${c.id}" target="_blank" class="btn btn-link link-danger p-0 fs-4" title="Ver PDF">
-                                <i class="bi bi-file-earmark-pdf-fill"></i>
-                            </a>
-                        </td>
-                        <td><span class="badge bg-secondary px-2 py-1 font-monospace">${c.numero_documento}</span></td>
-                        <td class="text-dark">${fechaFormateada}</td>
-                        <td class="text-muted fw-semibold">${c.cliente_email}</td>
-                        <td class="text-end fw-bold text-dark">$${c.total_general.toLocaleString('es-CL')}</td>
-                    </tr>`;
-            });
-        }
-    </script>
+    
+    <script src="/js/historial.js"></script>
     <script src="/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

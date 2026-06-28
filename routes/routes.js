@@ -2,23 +2,57 @@ const express = require('express');
 const router = express.Router();
 const controllers = require('../Controllers/controllers');
 
-// 1. RUTAS DE NAVEGACIÓN (VISTAS HTML)
-router.get('/', controllers.renderindex);
-router.get('/pagina2', controllers.renderPagina2); // Nosotros
-router.get('/pagina3', controllers.renderPagina3); // Contacto
-router.get('/pagina4', controllers.renderPagina4); // Stock Inventario
-router.get('/pagina5', controllers.renderPagina5); // Cotizador
+// ==========================================
+// 1. RUTAS PARA CARGAR LAS PÁGINAS (HTML)
+// ==========================================
 
-// 2. ENDPOINTS DE LA API (TRANSACCIONALES)
+// Pantalla de inicio (Home)
+router.get('/', controllers.renderindex);
+
+// Página de Quiénes Somos
+router.get('/pagina2', controllers.renderPagina2); 
+
+// Página de Formulario de Contacto
+router.get('/pagina3', controllers.renderPagina3); 
+
+// Panel de administración para ver y cargar stock de productos
+router.get('/pagina4', controllers.renderPagina4); 
+
+// Pantalla del cotizador con el carro de compras
+router.get('/pagina5', controllers.renderPagina5); 
+
+// Pantalla del historial de cotizaciones emitidas
+router.get('/pagina6', controllers.renderPagina6);
+
+
+// ==========================================
+// 2. ENLACES DE LA API (ACCIONES Y DATOS)
+// ==========================================
+
+// Trae los productos de la base de datos con el precio formateado a pesos chilenos
 router.get('/api/productos', controllers.getProductosFormateados);
-router.post('/api/inventario/agregar', controllers.agregarInventario); // Admin suma stock
-router.post('/api/ventas/comprar', controllers.procesarVenta);        // Cliente resta stock
+
+// Cuando el administrador suma stock y cambia la categoría desde la consola de carga
+router.post('/api/inventario/agregar', controllers.agregarInventario); 
+
+// Cuando se hace una venta directa y hay que restar del stock
+router.post('/api/ventas/comprar', controllers.procesarVenta);        
+
+// Guarda la cotización y los datos del cliente de forma segura en la base de datos
 router.post('/api/validar', controllers.validarDatosCotizacion);
 
-// Endpoint que consultará el visor para armar la tabla HTML
-router.get('/api/cotizaciones-historial', controllers.obtenerHistorialCotizaciones);
+// Ruta para registrar un producto completamente nuevo en la BD
+router.post('/api/productos/nuevo', controllers.crearNuevoProducto);
 
-// Endpoint dinámico al que apuntará el href del icono PDF
-router.get('/cotizacion/ver/:id', controllers.renderizarCotizacionAlVuelo);
+
+// ==========================================
+// 3. REVISIÓN HISTÓRICA Y VISTA PDF
+// ==========================================
+
+// Trae la lista de todas las cotizaciones hechas para el historial
+router.get('/api/cotizaciones', controllers.obtenerHistorialCotizaciones);
+
+// CORRECCIÓN: Se cambió 'renderizarCotizacionAlVuelo' por la función real 'renderCotizacionVisual'
+router.get('/cotizacion/ver/:id', controllers.renderCotizacionVisual);
 
 module.exports = router;
