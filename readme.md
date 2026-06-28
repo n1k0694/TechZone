@@ -103,6 +103,7 @@ Arquitectura del Sistema (Evolución MVC)
 |                 VISTAS (FRONTEND DOM)                 |
 |  - pagina4.html (Consola de Carga e Inventario Real)  |
 |  - pagina5.html (Módulo Presupuestario e Inserción)   |
+|  - pagina6.html (historico de cotizaciones)   |
 +---------------------------+---------------------------+
               |                             ^
        Peticiones Fetch             Mapeo de Datos
@@ -141,27 +142,12 @@ Arquitectura del Sistema (Evolución MVC)
 
 # Código SQL del Modelo Relacional Consolidado
 # SQL
--- Base de Datos: techzone_db (Estructura Esencial de Operación)
-CREATE DATABASE IF NOT EXISTS `techzone_db` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `techzone_db`;
-
--- Tabla de catálogo tecnológico
-CREATE TABLE IF NOT EXISTS `productos` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `nombre` varchar(150) NOT NULL,
-  `categoria` varchar(100) NOT NULL,
-  `precio` int NOT NULL,
-  `stock` int NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Tabla de documentos de cotización (Cabecera)
 CREATE TABLE IF NOT EXISTS `cotizaciones` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `numero_documento` varchar(20) NOT NULL,
-  `cliente_nombre` varchar(150) NOT NULL,
-  `cliente_email` varchar(100) NOT NULL,
-  `cliente_telefono` varchar(20) NOT NULL,
+  `numero_documento` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cliente_nombre` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cliente_email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cliente_telefono` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `monto_neto` int NOT NULL DEFAULT '0',
   `monto_iva` int NOT NULL DEFAULT '0',
   `total_general` int NOT NULL DEFAULT '0',
@@ -170,7 +156,12 @@ CREATE TABLE IF NOT EXISTS `cotizaciones` (
   UNIQUE KEY `idx_numero_documento` (`numero_documento`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla intermedia (Detalle de ítems cotizados)
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `detalle_cotizaciones`
+--
+
 CREATE TABLE IF NOT EXISTS `detalle_cotizaciones` (
   `id` int NOT NULL AUTO_INCREMENT,
   `cotizacion_id` int NOT NULL,
@@ -179,9 +170,25 @@ CREATE TABLE IF NOT EXISTS `detalle_cotizaciones` (
   `precio_unitario` int NOT NULL,
   `subtotal` int NOT NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_detalle_cotizacion_parent` FOREIGN KEY (`cotizacion_id`) REFERENCES `cotizaciones` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_detalle_cotizacion_producto` FOREIGN KEY (`producto_id`) REFERENCES `productos` (`id`) ON DELETE RESTRICT
+  KEY `fk_detalle_cotizacion_parent` (`cotizacion_id`),
+  KEY `fk_detalle_cotizacion_producto` (`producto_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `productos`
+--
+
+CREATE TABLE IF NOT EXISTS `productos` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `categoria` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `precio` int NOT NULL,
+  `stock` int NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 # Integración Frontend e Iteración Dinámica (Rúbricas Front)
 # El front-end utiliza arreglos globales mapeados (matrizInventario) que interactúan mediante métodos avanzados de JavaScript moderno como .filter() para aislar productos con 
 # existencias al vuelo de manera local.
